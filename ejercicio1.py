@@ -2,8 +2,6 @@
 import itertools
 import os
 from multiprocessing import Manager, Process
-
-import praw
 import json
 
 from urllib3.connectionpool import xrange
@@ -59,22 +57,6 @@ def parallel_reading():
 
 
 if __name__ == "__main__":
-    # reddit = praw.Reddit(client_id='maPFuBmFp45gJA',
-    #                      client_secret='Rjh-6HYe5cMle8LZGa0cW_8bNbQ',
-    #                      user_agent='web_semantica bot depression scrapping')
-    #
-    # reddit.read_only = True
-    # counter = 0
-    # for submission in  reddit.subreddit('depression').new(limit=None):
-    #     print("Title: "+submission.title)
-    #     print("Self text: "+submission.selftext)
-    #     # print("Comments: "+submission.comments[0])
-    #     submission.comments.replace_more(limit=None)
-    #     for comment in submission.comments.list():
-    #         print(comment)
-    #     counter+=1
-    #     print(counter)
-    #     print(submission)
 
     subreddit_name = '"depression"'
 

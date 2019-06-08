@@ -23,12 +23,6 @@ def process_line(work, results):
             submission = json.loads(line)
             print(submission['title'])
 
-        # if '"subreddit":"depression"' in line:
-        #     print(substr)
-        #     submission = json.loads(line)
-        #     print(submission['title'])
-
-
 def sort_results(results):
     print("completed")
 

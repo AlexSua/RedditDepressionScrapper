@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 import itertools
 import os
+import re
+from math import log, sqrt
 from multiprocessing import Manager, Process
 import json
 
 from urllib3.connectionpool import xrange
 
+submissions_path = "./submissions_dataset/"
+depression_submissions_path = "./depression_submissions_dataset/"
+depression_results_path = "./results/"
 
-def process_line(work, results):
+
+def worker(work, results):
     result = dict()
     while True:
         line = work.get()
@@ -23,11 +29,24 @@ def process_line(work, results):
             submission = json.loads(line)
             print(submission['title'])
 
+
+def process_line(line):
+    submission = json.loads(line)
+    # print(submission['title'])
+    # print(submission['selftext'])
+
+    return re.sub("[^\w]", " ", ((submission['title'].lower() if submission['title'] != "[removed]" and submission[
+        'title'] != "[deleted]" else "") + " " + (
+                                     submission['selftext'].lower() if submission['selftext'] != "[removed]" and
+                                                                       submission[
+                                                                           'selftext'] != "[deleted]" else ""))).split()
+
+
 def sort_results(results):
     print("completed")
 
 
-def parallel_reading():
+def parallel_reading(fp):
     num_workers = 4
 
     manager = Manager()
@@ -35,14 +54,13 @@ def parallel_reading():
     work = manager.Queue(num_workers)
     pool = []
     for i in xrange(num_workers):
-        p = Process(target=process_line, args=(work, results))
+        p = Process(target=worker, args=(work, results))
         p.start()
         pool.append(p)
 
-    with open("./RS_2018-11") as fp:
-        iterator = itertools.chain(fp, (None,) * num_workers)
-        for line in iterator:
-            work.put(line)
+    iterator = itertools.chain(fp, (None,) * num_workers)
+    for line in iterator:
+        work.put(line)
 
     for p in pool:
         p.join()
@@ -50,24 +68,81 @@ def parallel_reading():
     sort_results(results)
 
 
-if __name__ == "__main__":
+def getAbsoluteFrequency():
+    result = dict()
+    totalNumber = 0
+    with open("./count_1w.txt") as file:
+        for line in file:
+            lineArray = line.replace("\n", "").split("\t")
+            wordNumber = int(lineArray[1])
+            result[lineArray[0]] = wordNumber
+            totalNumber += wordNumber
+    return (result, totalNumber)
 
+
+def getDepressionFrequency(words):
+    depressionDict = dict()
+    observationsNumber = 0
+    for file in os.listdir(depression_submissions_path):
+        with open(depression_submissions_path + file) as depression_file:
+            for line in depression_file:
+                lineArray = process_line(line)
+                for word in lineArray:
+                    if word in depressionDict:
+                        depressionDict[word] = depressionDict.get(word) + 1
+                        observationsNumber += 1
+                    else:
+                        if word in words:
+                            depressionDict[word] = 1
+                            observationsNumber += 1
+    return depressionDict, observationsNumber
+    # print(len(depression_file.readlines(70000)))
+    #
+    # print(len(depression_file.readlines(70000)))
+    # print(depression_file.readlines(70000) == [])
+
+
+def rootLogLikelihoodRatio(a, b, c, d):
+    E1 = c * (a + b) / (c + d)
+    E2 = d * (a + b) / (c + d)
+    result = 2 * (a * log(a / E1 + (1 if a == 0 else 0)) + b * log(b / E2 + (1 if b == 0 else 0)))
+    result = sqrt(result)
+    if (a / c) < (b / d):
+        result = -result
+    return result
+
+
+def createLLRlist(words, depression_words):
+    for key in depression_words[0].keys():
+        depression_words[0][key] = (rootLogLikelihoodRatio(depression_words[0][key], words[0][key], depression_words[1],
+                                                           words[1]), depression_words[0][key])
+
+    with open(depression_results_path+"results.txt", 'w') as results_file:
+        for key in sorted(depression_words[0], key=depression_words[0].get, reverse=True):
+            results_file.write(key + "\t" + str(depression_words[0][key]) + "\n")
+            print(key, ":", depression_words[0][key])
+    return depression_words[0]
+
+
+if __name__ == "__main__":
     subreddit_name = '"depression"'
 
-    dataset_path = "./submissions_dataset/"
-    for file in os.listdir(dataset_path):
-        print("Extracting depression submissions from dataset: " + file + " ...")
-        depression_path = './depression_submissions_dataset/depression-' + file
-        depression_file = open(depression_path, 'w')
-        with open(dataset_path + file) as fp:
-            counter = 0
-            for line in fp:
-                num = line.find('"subreddit":"') + 12
-                substr = line[num:num + 12]
-                if substr == subreddit_name:
-                    # submission = json.loads(line)
-                    depression_file.write(line)
-                    # print(submission['title'])
-                    counter += 1
-            print("\t"+counter + "posts found about depression")
-        depression_file.close()
+    for file in os.listdir(submissions_path):
+        depression_file_path = depression_submissions_path + 'depression-' + file
+        if not os.path.isfile(depression_file_path):
+            print("Extracting depression submissions from dataset: " + file + " ...")
+            depression_file = open(depression_file_path, 'w')
+            with open(submissions_path + file) as fp:
+                counter = 0
+                for line in fp:
+                    num = line.find('"subreddit":"') + 12
+                    if line[num:num + 12] == subreddit_name:
+                        depression_file.write(line)
+                        counter += 1
+                print("\t" + str(counter) + " posts found about depression")
+            depression_file.close()
+
+    words = getAbsoluteFrequency()
+    depression_words = getDepressionFrequency(words[0])
+    createLLRlist(words, depression_words)
+    print("finalizado")

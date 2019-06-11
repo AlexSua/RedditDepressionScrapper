@@ -1,71 +1,23 @@
 #!/usr/bin/env python3
-import itertools
 import os
 import re
 from math import log, sqrt
-from multiprocessing import Manager, Process
 import json
-
-from urllib3.connectionpool import xrange
 
 submissions_path = "./submissions_dataset/"
 depression_submissions_path = "./depression_submissions_dataset/"
 depression_results_path = "./results/"
 
 
-def worker(work, results):
-    result = dict()
-    while True:
-        line = work.get()
-        if (line is None):
-            results.append(result)
-            return
-
-        subreddit_name = '"depression"'
-        num = line.find('"subreddit":"') + 12
-
-        substr = line[num:num + 12]
-        if substr == subreddit_name:
-            submission = json.loads(line)
-            print(submission['title'])
-
-
 def process_line(line):
     submission = json.loads(line)
-    # print(submission['title'])
-    # print(submission['selftext'])
-
     return re.sub("[^\w]", " ", ((submission['title'].lower() if submission['title'] != "[removed]" and submission[
         'title'] != "[deleted]" else "") + " " + (
                                      submission['selftext'].lower() if submission['selftext'] != "[removed]" and
                                                                        submission[
                                                                            'selftext'] != "[deleted]" else ""))).split()
-
-
 def sort_results(results):
     print("completed")
-
-
-def parallel_reading(fp):
-    num_workers = 4
-
-    manager = Manager()
-    results = manager.list()
-    work = manager.Queue(num_workers)
-    pool = []
-    for i in xrange(num_workers):
-        p = Process(target=worker, args=(work, results))
-        p.start()
-        pool.append(p)
-
-    iterator = itertools.chain(fp, (None,) * num_workers)
-    for line in iterator:
-        work.put(line)
-
-    for p in pool:
-        p.join()
-
-    sort_results(results)
 
 
 def getAbsoluteFrequency():
@@ -96,10 +48,6 @@ def getDepressionFrequency(words):
                             depressionDict[word] = 1
                             observationsNumber += 1
     return depressionDict, observationsNumber
-    # print(len(depression_file.readlines(70000)))
-    #
-    # print(len(depression_file.readlines(70000)))
-    # print(depression_file.readlines(70000) == [])
 
 
 def rootLogLikelihoodRatio(a, b, c, d):
@@ -117,31 +65,34 @@ def createLLRlist(words, depression_words):
         depression_words[0][key] = (rootLogLikelihoodRatio(depression_words[0][key], words[0][key], depression_words[1],
                                                            words[1]), depression_words[0][key])
 
-    with open(depression_results_path+"results.txt", 'w') as results_file:
+    with open(depression_results_path + "results.txt", 'w') as results_file:
         for key in sorted(depression_words[0], key=depression_words[0].get, reverse=True):
             results_file.write(key + "\t" + str(depression_words[0][key]) + "\n")
-            print(key, ":", depression_words[0][key])
+            # print(key, ":", depression_words[0][key])
     return depression_words[0]
 
 
-if __name__ == "__main__":
-    subreddit_name = '"depression"'
-
+def extractor(subreddit_name):
+    subreddit_name_len = len('"' + subreddit_name + '"')
     for file in os.listdir(submissions_path):
-        depression_file_path = depression_submissions_path + 'depression-' + file
+        depression_file_path = depression_submissions_path + subreddit_name+ '-' + file
         if not os.path.isfile(depression_file_path):
-            print("Extracting depression submissions from dataset: " + file + " ...")
+            print("Extracting "+subreddit_name+" submissions from dataset: " + file + "...")
             depression_file = open(depression_file_path, 'w')
             with open(submissions_path + file) as fp:
                 counter = 0
                 for line in fp:
                     num = line.find('"subreddit":"') + 12
-                    if line[num:num + 12] == subreddit_name:
+                    if line[num:num + subreddit_name_len] == '"' + subreddit_name + '"':
                         depression_file.write(line)
                         counter += 1
-                print("\t" + str(counter) + " posts found about depression")
+                print("\t" + str(counter) + " posts found about "+subreddit_name)
             depression_file.close()
 
+
+if __name__ == "__main__":
+
+    extractor("depression")
     words = getAbsoluteFrequency()
     depression_words = getDepressionFrequency(words[0])
     createLLRlist(words, depression_words)

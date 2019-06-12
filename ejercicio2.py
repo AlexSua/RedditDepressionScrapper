@@ -223,7 +223,6 @@ def get_cooelements_dict():
 
 def calculate_weight(cooelements_dict, damping_factor, word_vocab):
     result = dict()
-
     for key in cooelements_dict:
         val = 0
         for elem in cooelements_dict[key]:

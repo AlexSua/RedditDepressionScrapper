@@ -24,7 +24,8 @@ depression_results_path = "./results/"
 
 word_weight = OrderedDict()
 cooelements = set()
-word_index=0
+word_index = 0
+
 
 # words_number = 13507227
 
@@ -62,7 +63,7 @@ def get_cooelements(sentences, window_size):
         for i, word in enumerate(s):
 
             if word not in word_weight:
-                word_weight[word]=word_index
+                word_weight[word] = word_index
                 word_index += 1
             for j in range(i + 1, i + window_size):
                 if j >= sentence_len:
@@ -71,20 +72,6 @@ def get_cooelements(sentences, window_size):
                 if cooelement not in cooelements:
                     cooelements.add(cooelement)
     return cooelements
-
-
-def create_matrix(cooelements):
-    word_weight_len = len(word_weight)
-    matrix = np.zeros((word_weight_len, word_weight_len), dtype='float')
-    for cooelement1, cooelement2 in cooelements:
-        cooelement1Index = word_weight[cooelement1]
-        cooelement2Index = word_weight[cooelement2]
-        matrix[cooelement1Index][cooelement2Index] = 1
-        matrix[cooelement2Index][cooelement1Index] = 1
-
-    norm = np.sum(matrix, axis=0)
-    g_norm = np.divide(matrix, norm, where=norm != 0)
-    return g_norm
 
 
 def stop_words():
@@ -201,6 +188,50 @@ def stop_words():
 #                     counter += len(filtered_list)
 #     return counter
 
+
+def create_matrix(cooelements):
+    word_weight_len = len(word_weight)
+    matrix = np.zeros((word_weight_len, word_weight_len), dtype='float')
+    for cooelement1, cooelement2 in cooelements:
+        cooelement1Index = word_weight[cooelement1]
+        cooelement2Index = word_weight[cooelement2]
+        matrix[cooelement1Index][cooelement2Index] = 1
+        matrix[cooelement2Index][cooelement1Index] = 1
+
+    norm = np.sum(matrix, axis=0)
+    g_norm = np.divide(matrix, norm, where=norm != 0)
+    return g_norm
+
+
+def get_cooelements_dict():
+    cooelementsDict = dict()
+    for cooelement in cooelements:
+        if cooelement[0] not in cooelementsDict:
+            cooelementsDict[cooelement[0]] = [cooelement[1]]
+        else:
+            cooelementsDict[cooelement[0]] += [cooelement[1]]
+
+        if cooelement[1] not in cooelementsDict:
+            cooelementsDict[cooelement[1]] = [cooelement[0]]
+        else:
+            cooelementsDict[cooelement[1]] += [cooelement[0]]
+
+    for key in word_weight:
+        word_weight[key] = 1
+    return cooelementsDict
+
+
+def calculate_weight(cooelements_dict, damping_factor, word_vocab):
+    result = dict()
+
+    for key in cooelements_dict:
+        val = 0
+        for elem in cooelements_dict[key]:
+            val += word_vocab[elem] / len(cooelements_dict[elem])
+        result[key] = (1 - damping_factor) + damping_factor * val
+    return result
+
+
 def print_result(dictionary):
     with open(depression_results_path + "results-pagerank.txt", 'w') as results_file:
         for key in sorted(dictionary, key=dictionary.get, reverse=True):
@@ -223,31 +254,36 @@ def processing_file():
     # min_diff = 1e-5  # convergence threshold
     steps = 30  # iteration steps
 
-    matrix=create_matrix(cooelements)
-    pr = np.array([1] * int(word_index))
+    codict = get_cooelements_dict()
+
+    # matrix = create_matrix(cooelements)
+
+    # pr = np.array([1] * int(word_index))
 
     # Iteration
     # previous_pr = 0
+
+    global word_weight
     for i in range(steps):
-        pr = (1 - d) + d * np.dot(matrix, pr)
+        word_weight = calculate_weight(codict, d, word_weight)
+
+        # pr = (1 - d) + d * np.dot(matrix, pr)
         # if abs(previous_pr - sum(pr)) < min_diff:
         #     break
         # else:
         # previous_pr = sum(pr)
 
     # Get weight for each node
-    node_weight = dict()
-    for word, index in word_weight.items():
-        node_weight[word] = pr[index]
-    print_result(node_weight)
-
-
+    # node_weight = dict()
+    # for word, index in word_weight.items():
+    #    node_weight[word] = pr[index]
+    print_result(word_weight)
 
 
 if __name__ == "__main__":
     # stop_words_list = stop_words()
     # word_list = getAbsoluteFrequency()[0]
-    word_index=0
+    word_index = 0
     # words_number = countWords()
     # print(words_number)
     processing_file()

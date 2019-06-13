@@ -16,8 +16,6 @@ def process_line(line):
                                      submission['selftext'].lower() if submission['selftext'] != "[removed]" and
                                                                        submission[
                                                                            'selftext'] != "[deleted]" else ""))).split()
-def sort_results(results):
-    print("completed")
 
 
 def getAbsoluteFrequency():
@@ -29,13 +27,14 @@ def getAbsoluteFrequency():
             wordNumber = int(lineArray[1])
             result[lineArray[0]] = wordNumber
             totalNumber += wordNumber
-    return (result, totalNumber)
+    return result, totalNumber
 
 
 def getDepressionFrequency(words):
     depressionDict = dict()
     observationsNumber = 0
     for file in os.listdir(depression_submissions_path):
+        print(file)
         with open(depression_submissions_path + file) as depression_file:
             for line in depression_file:
                 lineArray = process_line(line)
@@ -67,32 +66,15 @@ def createLLRlist(words, depression_words):
 
     with open(depression_results_path + "results.txt", 'w') as results_file:
         for key in sorted(depression_words[0], key=depression_words[0].get, reverse=True):
-            results_file.write(key + "\t" + str(depression_words[0][key]) + "\n")
+            if depression_words[0][key][0] >= 0:
+                results_file.write(key + "\t" + str(depression_words[0][key][0]) + "\n")
             # print(key, ":", depression_words[0][key])
     return depression_words[0]
 
 
-def extractor(subreddit_name):
-    subreddit_name_len = len('"' + subreddit_name + '"')
-    for file in os.listdir(submissions_path):
-        depression_file_path = depression_submissions_path + subreddit_name+ '-' + file
-        if not os.path.isfile(depression_file_path):
-            print("Extracting "+subreddit_name+" submissions from dataset: " + file + "...")
-            depression_file = open(depression_file_path, 'w')
-            with open(submissions_path + file) as fp:
-                counter = 0
-                for line in fp:
-                    num = line.find('"subreddit":"') + 12
-                    if line[num:num + subreddit_name_len] == '"' + subreddit_name + '"':
-                        depression_file.write(line)
-                        counter += 1
-                print("\t" + str(counter) + " posts found about "+subreddit_name)
-            depression_file.close()
 
 
 if __name__ == "__main__":
-
-    extractor("depression")
     words = getAbsoluteFrequency()
     depression_words = getDepressionFrequency(words[0])
     createLLRlist(words, depression_words)

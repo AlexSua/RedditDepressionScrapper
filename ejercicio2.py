@@ -5,6 +5,7 @@ import json
 import nltk
 from nltk import tokenize, word_tokenize
 from nltk.corpus import stopwords
+import scipy.stats
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -91,8 +92,8 @@ def calculate_weight(cooelements_dict, damping_factor, word_vocab):
     for key in cooelements_dict:
         val = 0
         for elem in cooelements_dict[key]:
-            val += word_vocab[elem] / len(cooelements_dict[elem])
-        weight_result[key] = (1 - damping_factor) + damping_factor * val
+            val += word_vocab[elem] / float(len(cooelements_dict[elem]))
+        weight_result[key] = (1 - float(damping_factor)) * (1 / float(len(word_vocab))) + damping_factor * val
     return weight_result
 
 
@@ -101,6 +102,13 @@ def write_result(dictionary, path):
         for key in sorted(dictionary, key=dictionary.get, reverse=True):
             results_file.write(key + "\t" + str(dictionary[key]) + "\n")
             # print(key, ":", depression_words[0][key])
+
+
+def initialize_weight(vocab):
+    vocab_len = float(len(vocab))
+    for key in vocab:
+        vocab[key] = 1 / vocab_len
+    return vocab
 
 
 def analyzing_files(path, d, iter, ws):
@@ -117,9 +125,32 @@ def analyzing_files(path, d, iter, ws):
                 vocab, cooelements = get_vocab_and_cooelements(sentences, ws, vocab, cooelements)
 
     codict = get_cooelements_dict(cooelements)
+    vocab = initialize_weight(vocab)
     for i in range(iter):
+        print("Iteration [" + str(i) + "]")
         vocab = calculate_weight(codict, d, vocab)
     return vocab
+
+
+def spearman_correlation_calculation(file1, file2):
+    file2dict = dict()
+    correlationlist1 = []
+    correlationlist2 = []
+
+    with open(file2) as f2:
+        for line in f2:
+            lineArray = line.replace("\n", "").split("\t")
+            file2dict[lineArray[0]] = lineArray[1]
+
+    with open(file1) as f1:
+        for line in f1:
+            lineArray = line.replace("\n", "").split("\t")
+            if lineArray[0] in file2dict:
+                correlationlist1.append(float(lineArray[1]))
+                correlationlist2.append(float(file2dict[lineArray[0]]))
+
+    spear = scipy.stats.stats.spearmanr(correlationlist1, correlationlist2)
+    print(spear)
 
 
 if __name__ == "__main__":
@@ -129,5 +160,6 @@ if __name__ == "__main__":
 
     result = analyzing_files(depression_submissions_path, damping, iterations, window_size)
     write_result(result, depression_results_path + "results-pagerank.txt")
-
+    spearman_correlation_calculation(depression_results_path + "results.txt",
+                                     depression_results_path + "results-pagerank.txt")
     print("finalizado")

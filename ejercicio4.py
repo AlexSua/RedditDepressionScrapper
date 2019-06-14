@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 from nltk.corpus import stopwords
@@ -8,8 +9,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 
-def get_posts(files):
-
+def get_ejercicio3_posts(files):
     posts = dict()
 
     for file in files:
@@ -65,18 +65,34 @@ def prepare_negative_data_for_training(file):
                 break
     return negative_list, positiveness_list
 
+
+def get_ad_al_stop_submissions(path):
+    result = dict()
+    for file in os.listdir(path):
+        with open(path + file) as f:
+            for line in f:
+                line_processed = process_line(line)
+                if len(line_processed[1]) > 5:
+                    d = {}
+                    d["content"] = line_processed[0]
+                    d["content_processed"] = line_processed[1]
+                    result[line_processed[0]["id"]] = d
+
+    return result
+
+
 def get_list_from_dict(dictionary):
     result = []
     id_list = []
     for key in dictionary:
         result.append(' '.join(dictionary[key]["content_processed"]))
         id_list.append(key)
-    return result,id_list
+    return result, id_list
 
 
 if __name__ == "__main__":
     results_dir = "./results/"
-    posts = get_posts([results_dir + "results_ejercicio3_best_posts", results_dir + "results_ejercicio3_worst_posts"])
+    posts = get_ejercicio3_posts([results_dir + "results_ejercicio3_best_posts", results_dir + "results_ejercicio3_worst_posts"])
 
     Depression, true_array = prepare_positive_data_for_training(posts)
     NotDepression, false_array = prepare_negative_data_for_training(results_dir + "results_ejercicio4_random_posts")
@@ -96,7 +112,24 @@ if __name__ == "__main__":
     classifier = RandomForestClassifier(n_estimators=100, max_depth=2, random_state=0)
     classifier.fit(X_train, y_train)
 
-    # test = vectorizer.transform(x)
+    submissions = get_ad_al_stop_submissions("./ejercicio4_submissions_dataset/")
+    submissions_list, id_list = get_list_from_dict(submissions)
+
+    prediction_result = classifier.predict(vectorizer.transform(submissions_list))
+
+    depressed_people = set()
+    for i, x in enumerate(prediction_result):
+        if x == 1:
+            print(submissions[id_list[i]]["content"])
+            if "deleted" not in submissions[id_list[i]]["content"]["author"]:
+                depressed_people.add(submissions[id_list[i]]["content"]["author"])
+
+    print("\n"
+          "Depressed persons:")
+    for person in depressed_people:
+        print(person)
+
+    print("\n")
 
     print("Accuracy test %s"
           % (accuracy_score(y_test, classifier.predict(X_test))))

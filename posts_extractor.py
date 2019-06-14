@@ -15,10 +15,8 @@ def extractor(subreddit_name,submissions_path,result_path):
             with open(submissions_path + file) as fp:
                 counter = 0
                 for line in fp:
-
-
                     num = line.find('"subreddit":"') + 12
-                    if line[num:num + subreddit_name_len] == '"' + subreddit_name + '"':
+                    if line[num:num + subreddit_name_len].lower() == '"' + subreddit_name.lower() + '"':
                         depression_file.write(line)
                         counter += 1
                 print("\t" + str(counter) + " posts found about " + subreddit_name)
@@ -26,4 +24,4 @@ def extractor(subreddit_name,submissions_path,result_path):
 
 
 if __name__ == "__main__":
-    extractor("offmychest","./submissions_dataset/","./offmychest_submissions_dataset/")
+    extractor("addiction","./submissions_dataset/","./ejercicio4_submissions_dataset/")

@@ -15,6 +15,8 @@ def extractor(subreddit_name,submissions_path,result_path):
             with open(submissions_path + file) as fp:
                 counter = 0
                 for line in fp:
+
+
                     num = line.find('"subreddit":"') + 12
                     if line[num:num + subreddit_name_len] == '"' + subreddit_name + '"':
                         depression_file.write(line)

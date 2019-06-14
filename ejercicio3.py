@@ -68,6 +68,7 @@ def create_post_object(actual_post):
     post["positive"] = positive
     post["weight"] = actual_post[0]
     post["content"] = actual_post[1]
+    post["content_processed"] = actual_post[2]
     return post
 
 

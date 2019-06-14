@@ -64,7 +64,7 @@ def createLLRlist(words, depression_words):
         depression_words[0][key] = (rootLogLikelihoodRatio(depression_words[0][key], words[0][key], depression_words[1],
                                                            words[1]), depression_words[0][key])
 
-    with open(depression_results_path + "results.txt", 'w') as results_file:
+    with open(depression_results_path + "results_ejercicio1.txt", 'w') as results_file:
         for key in sorted(depression_words[0], key=depression_words[0].get, reverse=True):
             if depression_words[0][key][0] >= 0:
                 results_file.write(key + "\t" + str(depression_words[0][key][0]) + "\n")

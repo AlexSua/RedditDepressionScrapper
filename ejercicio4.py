@@ -118,11 +118,13 @@ if __name__ == "__main__":
     prediction_result = classifier.predict(vectorizer.transform(submissions_list))
 
     depressed_people = set()
+    positive_posts = list()
     for i, x in enumerate(prediction_result):
         if x == 1:
             print(submissions[id_list[i]]["content"])
             if "deleted" not in submissions[id_list[i]]["content"]["author"]:
                 depressed_people.add(submissions[id_list[i]]["content"]["author"])
+            positive_posts.append(submissions[id_list[i]]["content"])
 
     print("\n"
           "Depressed persons:")
@@ -131,7 +133,24 @@ if __name__ == "__main__":
 
     print("\n")
 
+    accuracy_test =accuracy_score(y_test, classifier.predict(X_test))
+    accuracy_train =accuracy_score(y_train, classifier.predict(X_train))
+
+    with open("./results/results_ejercicio4_gente_deprimida_posts_alc_ad_stop",'w') as f:
+        f.write("*********PRECISION DEL CLASIFICADOR************"+"\n")
+        f.write("Precision conjunto de testeo:" + str(accuracy_test)+ "\n")
+        f.write("Precision conjunto de entrenamiento:" + str(accuracy_train) + "\n")
+        f.write("\n")
+        f.write("********GENTE DEPRIMIDA***********"+"\n")
+        for person in depressed_people:
+            f.write(person+"\n")
+        f.write("\n")
+        f.write("********POSTS DE ALCOHOLISMO ADICCION Y PARAR DE JUGAR Y FUMAR QUE HAN DADO POSITIVO EN EL CLASIFICADOR (De estos posts se ha obtenido la lista de gente deprimida)***********\n")
+        for positive_post in positive_posts:
+            json.dump(positive_post,f)
+            f.write("\n")
+
     print("Accuracy test %s"
-          % (accuracy_score(y_test, classifier.predict(X_test))))
+          % (accuracy_test) )
     print("Accuracy training %s"
-          % (accuracy_score(y_train, classifier.predict(X_train))))
+          % (accuracy_train))

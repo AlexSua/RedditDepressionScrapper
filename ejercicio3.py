@@ -108,8 +108,8 @@ def write_list_in_file(list,file):
 if __name__ == "__main__":
 
     results_dir = "./results/"
-    keywords = combine_results(results_dir+ "results.txt",
-                               results_dir+ "results-pagerank.txt")
+    keywords = combine_results(results_dir+ "results_ejercicio1.txt",
+                               results_dir+ "results_ejercicio2_pagerank.txt")
 
     posts = calculate_weight_posts("./offmychest_submissions_dataset/", keywords)
     best_posts, worst_posts = get_best_worst_posts(posts)

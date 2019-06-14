@@ -160,6 +160,6 @@ if __name__ == "__main__":
 
     result = analyzing_files(depression_submissions_path, damping, iterations, window_size)
     write_result(result, depression_results_path + "results-pagerank.txt")
-    spearman_correlation_calculation(depression_results_path + "results.txt",
-                                     depression_results_path + "results-pagerank.txt")
+    spearman_correlation_calculation(depression_results_path + "results_ejercicio1.txt",
+                                     depression_results_path + "results_ejercicio2_pagerank.txt")
     print("finalizado")

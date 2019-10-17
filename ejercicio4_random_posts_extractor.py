@@ -13,7 +13,7 @@ def process_line(line):
     else:
         return ("", [])
 
-
+#Obtiene todos los posts de mental health para filtrar en el extractor.
 def get_mental_health_subreddits(file):
     mhsub = set()
     with open(file) as f:
@@ -22,6 +22,11 @@ def get_mental_health_subreddits(file):
     return mhsub
 
 
+#Este extractor estará encargado de obtener posts aleatorios. Lo que hace es recorrer el archivo mensual, obtener todos aquellos posts
+# con mas de 100 palabras, deshechar todos aquellso que contengan palabra relacionada con depresion.
+#Cada vez que se obtiene un post se hace módulo 100 para obtener el centésimo post que comparta estos criterios. Este será el que se añada a la lista
+# de posts aleatorios.
+#También se filtra por los subreddits anteriores.
 def extractor(submissions_path, result_path, exception_list):
     for file in os.listdir(submissions_path):
         print("Extracting submissions from dataset: " + file + "...")

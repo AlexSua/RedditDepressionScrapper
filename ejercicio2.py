@@ -15,7 +15,7 @@ submissions_path = "./submissions_dataset/"
 depression_submissions_path = "./depression_submissions_dataset/"
 depression_results_path = "./results/"
 
-
+#Transforma la linea obtenida en una lista de frases.
 def process_line(line):
     sentences = []
     submission = json.loads(line)
@@ -25,7 +25,7 @@ def process_line(line):
         sentences += tokenize.sent_tokenize(submission['selftext'], 'english')
     return filter_sentences(sentences)
 
-
+#Filtra las frases obtenidas eliminado las stop words, palabras comunes en inglés.
 def filter_sentences(sentences):
     filtered_sentences = []
     for sentence in sentences:
@@ -41,6 +41,10 @@ def filter_sentences(sentences):
     return filtered_sentences
 
 
+#Del conjunto de frases obtenidas en un post se crean los cooelementos, que serán cada una de las relaciones bidireccionales del grafo final.
+#De esta funcion se obtendrán todas las palabras presentas en las frases anteriores y un conjunto de cooelementos.
+#ws es el tamaño de ventana (Window Size)
+#Los cooelementos al principio se almacenarán en un set debido a su rendimiento a la hora de chequear apariciones.
 def get_vocab_and_cooelements(sentences, ws, word_vocab, cooelements):
     for s in sentences:
         sentence_len = len(s)
@@ -73,6 +77,10 @@ def get_vocab_and_cooelements(sentences, ws, word_vocab, cooelements):
 #     return stop_word_list
 
 
+#Transforma el set de cooelementos en un diccionario. En este diccionario se almacenará un elemento como clave
+#y como valor una lista de elementos que son cooelementos del elemento anterior. Esto se hace porque como resultado obtendremos
+#un diccionario que contiene para cada elemento todos aquellos elementos que le aportarán valor. Este valor para cada uno de ellos posteriormente
+# se puede calcular accediendo al elemento dentro del diccionario y chequeando su longitud.
 def get_cooelements_dict(cooelements):
     cooelementsDict = dict()
     for cooelement in cooelements:
@@ -86,7 +94,9 @@ def get_cooelements_dict(cooelements):
             cooelementsDict[cooelement[1]] += [cooelement[0]]
     return cooelementsDict
 
-
+#Calcula el peso para cada elemento. Para ello se recorre el diccionario de cooelementos, dentro de cada elemento se recorre la lista de sus cooelementos.
+#una vez se obtiene un cooelemento se accede en el diccionario a este elemento y se obtiene su longitud como objetivo de calcular el valor que le aporta al elemento protagonista.
+#El sumatorio del valor de todos sus cooelementos será su valor final.
 def calculate_weight(cooelements_dict, damping_factor, word_vocab):
     weight_result = dict()
     for key in cooelements_dict:
@@ -97,20 +107,23 @@ def calculate_weight(cooelements_dict, damping_factor, word_vocab):
     return weight_result
 
 
+#Escribe el resultado ordenador en un fichero
 def write_result(dictionary, path):
     with open(path, 'w') as results_file:
         for key in sorted(dictionary, key=dictionary.get, reverse=True):
             results_file.write(key + "\t" + str(dictionary[key]) + "\n")
             # print(key, ":", depression_words[0][key])
 
-
+#Inicializa el valor de cada palabra a 1/numero de palabras del vocabulario.
 def initialize_weight(vocab):
     vocab_len = float(len(vocab))
     for key in vocab:
         vocab[key] = 1 / vocab_len
     return vocab
 
-
+#Funcion que se encargará de obener todos los archivos de depresión del directorio que se le asigne y ejecutará las funciones explicadas anteriormente
+# con el objetivo de obtener el valor del pagerank para cada token.
+#Se le aplicará un total de 50 iteraciones.
 def analyzing_files(path, d, iter, ws):
     vocab = dict()
     cooelements = set()
@@ -131,7 +144,9 @@ def analyzing_files(path, d, iter, ws):
         vocab = calculate_weight(codict, d, vocab)
     return vocab
 
-
+#Función que calcula el spearman correlation entre dos listas de valores. En este caso el resultado de los pesos de las palabras
+#resultado del ejercicio 1 y el resultado del ejercicio2. El resultado obtenido es de 0.8. Esto quiere decir que ambas listas
+#tienen una correlación  del 80%.
 def spearman_correlation_calculation(file1, file2):
     file2dict = dict()
     correlationlist1 = []

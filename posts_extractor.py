@@ -1,6 +1,6 @@
 import os
 
-
+#Obtiene los posts de un determinado subreddit.
 def extractor(subreddit_name,submissions_path,result_path):
 
     if not os.path.isdir(result_path):

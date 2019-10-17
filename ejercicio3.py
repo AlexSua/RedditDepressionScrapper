@@ -8,7 +8,8 @@ submissions_path = "./submissions_dataset/"
 depression_submissions_path = "./depression_submissions_dataset/"
 depression_results_path = "./results/"
 
-
+#Procesa una linea del archivo obteniendo una lista de palabras limpia de simbolos, así como también devuelve
+# el post original.
 def process_line(line):
     submission = json.loads(line)
     if submission['selftext'] != "[removed]" and submission['selftext'] != "[deleted]" and submission['selftext']:
@@ -19,7 +20,7 @@ def process_line(line):
     else:
         return ("", [])
 
-
+#Obtiene el peso de cada post para ver cuales contienen mas palabras de las obtenidas en el resultado de ejercicio1 y 2
 def calculate_weight_posts(posts_path, keywords):
     posts = dict()
     for file in os.listdir(posts_path):
@@ -36,7 +37,8 @@ def calculate_weight_posts(posts_path, keywords):
                 posts[line_tuple[0]["id"]] = (value, line_tuple[0], line_tuple[1])
     return posts
 
-
+#Obtener los pesos de las palabras del ejercicio 1 y combina ambas listas para obtener un diccionario combinado del resultado
+# del ejercicio 1 y 2 con los valores del ejercicio 1. Se filtran las palabras que contengan depres.
 def combine_results(file1, file2):
     file2dict = dict()
     result = dict()
@@ -56,7 +58,7 @@ def combine_results(file1, file2):
 
     return result
 
-
+#Crea un objeto un post que se guardará como resultado marcandolo a su vez como positivo o negativo en caso de tener el substring 'depres'
 def create_post_object(actual_post):
     positive = False
     for word in actual_post[2]:
@@ -71,7 +73,8 @@ def create_post_object(actual_post):
     post["content_processed"] = actual_post[2]
     return post
 
-
+#Obtiene los mejores y peores posts obtenidos de calculate_weight_posts. Siendo los mejores con mayor valor acumulado de palabras relacionadas con depresión obtenidas
+# del resultado del ejercicio 1
 def get_best_worst_posts(posts):
     counter = 0
     best_posts = []
@@ -97,7 +100,7 @@ def get_best_worst_posts(posts):
     return best_posts, worst_posts
 
 
-
+#Escribe una lista en un archivo. Se usa para guardar la lista de mejores posts y peores posts.
 def write_list_in_file(list,file):
     with open(file,"w") as f:
         for element in list:
